@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Warsaw Realtime Tram Map</title>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
+    <link href="leaflet.css" rel="stylesheet" />
+    <link href="fa/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="am/leaflet.awesome-markers.css" rel="stylesheet" />
+    <script src="jquery-3.0.0.min.js"></script>
+    <script src="leaflet.js"></script>
+    <script src="am/leaflet.awesome-markers.min.js"></script>
+    <script src="MovingMarker.js"></script>
+</head>
+<body style="height: 100vh; width: 100vw; padding: 0px; margin: 0px;">
+<div id="map" style="height: 100vh; width: 100vw; padding: 0px; margin: 0px;"></div>
+<script>(function() {
+  var awesome_markers_colors, tiles, tramsUpdate, trams_markers;
+
+  L.AwesomeMarkers.Icon.prototype.options.prefix = 'fa';
+
+  awesome_markers_colors = ['red', 'darkred', 'orange', 'green', 'darkgreen', 'blue', 'purple', 'darkpuple', 'cadetblue'];
+
+  trams_markers = {};
+
+  tramsUpdate = function() {
+    return $.ajax({
+      url: 'https://ipepecors.azurewebsites.net/?url=' + btoa('https://api.um.warszawa.pl/api/action/wsstore_get/?id=c7238cfe-8b1f-4c38-bb4a-de386db7e776&apikey=04fc23e2-8551-46a8-bf56-a5e734dea331')
+    }).done(function(cors) {
+      var ref;
+      return JSON.parse((cors != null ? (ref = cors.response) != null ? ref.body : void 0 : void 0) || '{"result":[]}').result.forEach(function(tram, index) {
+        var old_tram, tram_id;
+        tram_id = tram.FirstLine.trim() + '_' + tram.Brigade.trim();
+        if (trams_markers[tram_id]) {
+          old_tram = trams_markers[tram_id];
+          if (tram.Lat !== old_tram.Lat || tram.Lon !== old_tram.Lon) {
+            return trams_markers[tram_id].moveTo([tram.Lat, tram.Lon], 10000);
+          }
+        } else {
+          trams_markers[tram_id] = L.Marker.movingMarker([[tram.Lat, tram.Lon]], [], {
+            icon: L.AwesomeMarkers.icon({
+              icon: 'train',
+              markerColor: awesome_markers_colors[index % (awesome_markers_colors.length - 1)]
+            })
+          });
+          return trams_markers[tram_id].addTo(window.map).bindPopup(JSON.stringify(tram));
+        }
+      });
+    });
+  };
+
+  setInterval(tramsUpdate, 10000);
+
+  tramsUpdate();
+
+  tiles = L.tileLayer('http://otile{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg', {
+    maxZoom: 18,
+    subdomains: '1234'
+  });
+
+  window.map = L.map('map', {
+    layers: tiles,
+    center: [52.23, 21.01],
+    zoom: 13
+  });
+
+}).call(this);
+</script>
+</body>
+</html>
