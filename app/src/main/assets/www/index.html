@@ -10,10 +10,15 @@
     <script src="leaflet.js"></script>
     <script src="am/leaflet.awesome-markers.min.js"></script>
     <script src="MovingMarker.js"></script>
+    <style>
+        .leaflet-popup-close-button{
+            font-size: 10em;
+        }
+    </style>
 </head>
 <body style="height: 100vh; width: 100vw; padding: 0px; margin: 0px;">
 <div id="map" style="height: 100vh; width: 100vw; padding: 0px; margin: 0px;"></div>
-<script>(function() {
+<script type="application/javascript">(function() {
   var awesome_markers_colors, tiles, tramsUpdate, trams_markers;
 
   L.AwesomeMarkers.Icon.prototype.options.prefix = 'fa';
@@ -42,7 +47,9 @@
               markerColor: awesome_markers_colors[index % (awesome_markers_colors.length - 1)]
             })
           });
-          return trams_markers[tram_id].addTo(window.map).bindPopup(JSON.stringify(tram));
+          var popupHtml = "Line:"+tram.FirstLine.trim();
+          popupHtml += "<br>Brigade:"+parseInt(tram.Brigade.trim());
+          return trams_markers[tram_id].addTo(window.map).bindPopup(popupHtml);
         }
       });
     });
@@ -52,9 +59,11 @@
 
   tramsUpdate();
 
-  tiles = L.tileLayer('http://otile{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg', {
+
+  tiles = L.tileLayer('http://{s}.tile.stamen.com/toner/{z}/{x}/{y}.png', {
+    attribution: '<a href="http://maps.stamen.com">Map tiles</a> by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a target="_top" href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.',
     maxZoom: 18,
-    subdomains: '1234'
+    subdomains: 'abcd'
   });
 
   window.map = L.map('map', {
