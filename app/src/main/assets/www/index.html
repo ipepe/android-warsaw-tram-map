@@ -47,7 +47,7 @@
               markerColor: awesome_markers_colors[index % (awesome_markers_colors.length - 1)]
             })
           });
-          var popupHtml = "Line:"+tram.FirstLine.trim();
+          var popupHtml = "Line:"+parseInt(tram.FirstLine.trim());
           popupHtml += "<br>Brigade:"+parseInt(tram.Brigade.trim());
           return trams_markers[tram_id].addTo(window.map).bindPopup(popupHtml);
         }
