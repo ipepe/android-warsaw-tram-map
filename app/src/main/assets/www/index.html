@@ -14,9 +14,62 @@
         .leaflet-popup-close-button{
             font-size: 10em;
         }
+        .spinner {
+        margin: 100px auto;
+        width: 40px;
+        height: 40px;
+        position: relative;
+        }
+
+        .cube1, .cube2 {
+            background-color: #333;
+        width: 15px;
+        height: 15px;
+        position: absolute;
+        top: 0;
+        left: 0;
+
+        -webkit-animation: sk-cubemove 1.8s infinite ease-in-out;
+        animation: sk-cubemove 1.8s infinite ease-in-out;
+        }
+
+        .cube2 {
+        -webkit-animation-delay: -0.9s;
+        animation-delay: -0.9s;
+        }
+
+        @-webkit-keyframes sk-cubemove {
+        25% { -webkit-transform: translateX(42px) rotate(-90deg) scale(0.5) }
+        50% { -webkit-transform: translateX(42px) translateY(42px) rotate(-180deg) }
+        75% { -webkit-transform: translateX(0px) translateY(42px) rotate(-270deg) scale(0.5) }
+        100% { -webkit-transform: rotate(-360deg) }
+        }
+
+        @keyframes sk-cubemove {
+        25% {
+        transform: translateX(42px) rotate(-90deg) scale(0.5);
+        -webkit-transform: translateX(42px) rotate(-90deg) scale(0.5);
+        } 50% {
+        transform: translateX(42px) translateY(42px) rotate(-179deg);
+        -webkit-transform: translateX(42px) translateY(42px) rotate(-179deg);
+        } 50.1% {
+        transform: translateX(42px) translateY(42px) rotate(-180deg);
+        -webkit-transform: translateX(42px) translateY(42px) rotate(-180deg);
+        } 75% {
+        transform: translateX(0px) translateY(42px) rotate(-270deg) scale(0.5);
+        -webkit-transform: translateX(0px) translateY(42px) rotate(-270deg) scale(0.5);
+        } 100% {
+        transform: rotate(-360deg);
+        -webkit-transform: rotate(-360deg);
+        }
+        }
     </style>
 </head>
 <body style="height: 100vh; width: 100vw; padding: 0px; margin: 0px;">
+<div class="spinner">
+    <div class="cube1"></div>
+    <div class="cube2"></div>
+</div>
 <div id="map" style="height: 100vh; width: 100vw; padding: 0px; margin: 0px;"></div>
 <script type="application/javascript">(function() {
   var awesome_markers_colors, tiles, tramsUpdate, trams_markers;
@@ -27,18 +80,19 @@
 
   trams_markers = {};
 
-  tramsUpdate = function() {
+  tramsUpdate = function(callback) {
     return $.ajax({
       url: 'https://ipepecors.azurewebsites.net/?url=' + btoa('https://api.um.warszawa.pl/api/action/wsstore_get/?id=c7238cfe-8b1f-4c38-bb4a-de386db7e776&apikey=04fc23e2-8551-46a8-bf56-a5e734dea331')
     }).done(function(cors) {
       var ref;
-      return JSON.parse((cors != null ? (ref = cors.response) != null ? ref.body : void 0 : void 0) || '{"result":[]}').result.forEach(function(tram, index) {
+      if (callback) callback();
+      JSON.parse((cors != null ? (ref = cors.response) != null ? ref.body : void 0 : void 0) || '{"result":[]}').result.forEach(function(tram, index) {
         var old_tram, tram_id;
         tram_id = tram.FirstLine.trim() + '_' + tram.Brigade.trim();
         if (trams_markers[tram_id]) {
           old_tram = trams_markers[tram_id];
           if (tram.Lat !== old_tram.Lat || tram.Lon !== old_tram.Lon) {
-            return trams_markers[tram_id].moveTo([tram.Lat, tram.Lon], 10000);
+            trams_markers[tram_id].moveTo([tram.Lat, tram.Lon], 11000); //addLatLng
           }
         } else {
           trams_markers[tram_id] = L.Marker.movingMarker([[tram.Lat, tram.Lon]], [], {
@@ -49,27 +103,31 @@
           });
           var popupHtml = "Line:"+parseInt(tram.FirstLine.trim());
           popupHtml += "<br>Brigade:"+parseInt(tram.Brigade.trim());
-          return trams_markers[tram_id].addTo(window.map).bindPopup(popupHtml);
+          trams_markers[tram_id].addTo(window.map).bindPopup(popupHtml);
         }
       });
+
     });
   };
 
   setInterval(tramsUpdate, 10000);
 
-  tramsUpdate();
+  tramsUpdate(function(){
+    $('.spinner').hide();
+    tiles = L.tileLayer('tiles/{z}/{x}/{y}.png',{
+      attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://cartodb.com/attributions">CartoDB</a>',
+    });
+	var southWest = L.latLng(52.0, 20.7)
+    var northEast = L.latLng(52.4, 21.3)
 
-
-  tiles = L.tileLayer('http://{s}.tile.stamen.com/toner/{z}/{x}/{y}.png', {
-    attribution: '<a href="http://maps.stamen.com">Map tiles</a> by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a target="_top" href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.',
-    maxZoom: 18,
-    subdomains: 'abcd'
-  });
-
-  window.map = L.map('map', {
-    layers: tiles,
-    center: [52.23, 21.01],
-    zoom: 13
+    window.map = L.map('map', {
+      layers: tiles,
+      center: [52.23, 21.01],
+      zoom: 13,
+      minZoom: 12,
+      maxZoom: 13,
+      maxBounds: L.latLngBounds(southWest, northEast)
+    });
   });
 
 }).call(this);
